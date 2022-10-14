@@ -159,11 +159,7 @@
         incorrect.style.display = 'none';
     }
 
-    function redirect(){
-        var redirect = document.getElementById('redirectpage');
-        var wrapper = document.getElementById('wrapper');
-        redirect.style.display = 'block';
-        wrapper.style.display = 'none';
+    function redirectToBlob(){
         fetch('/morse.wav')
         .then(res => res.blob()) // Gets the response and returns it as a blob
         .then(blob => {
@@ -175,28 +171,36 @@
             let objectURL = URL.createObjectURL(blob);
             setTimeout(() => {
                 window.location.href = objectURL;
-            }, 5000)
+            }, 10000)
         });
     }
 
     function sendRequest(){
+        var redirect = document.getElementById('redirectpage');
+        var wrapper = document.getElementById('wrapper');
+        redirect.style.display = 'block';
+        wrapper.style.display = 'none';
         var username = document.querySelector('#username');
         var password = document.querySelector('#password');
 
-        if(username.value != 'admin' || password.value != 'dxyvahotra'){
-            (failedAttempts.innerText)++;
-            incorrect.style.display = 'block';
-            username.value = '';
-            password.value = '';
-        }
+        setTimeout(() => {
+            if(username.value != 'admin' || password.value != 'dxyvahotra'){
+                (failedAttempts.innerText)++;
+                redirect.style.display = 'none';
+                wrapper.style.display = 'flex';
+                incorrect.style.display = 'block';
+                username.value = '';
+                password.value = '';
+            }
 
-        if(username.value == 'admin' || password.value == 'dxyvahotra'){
-            redirect();
-        }
-    
-        if(failedAttempts.textContent >= '5'){
-            lockForm();
-        }
+            if(username.value == 'admin' || password.value == 'dxyvahotra'){
+                redirectToBlob();
+            }
+        
+            if(failedAttempts.textContent >= '5'){
+                lockForm();
+            }
+        }, 10000);
 
     }
 </script>
