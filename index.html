@@ -8,6 +8,7 @@
 
         * {
             font-family: Verdana, Geneva, Tahoma, sans-serif;
+            overflow: hidden;
         }
         
         .wrapper {
@@ -77,31 +78,18 @@
     </style>
 </head>
 <body>
-    <?php
-        session_start();
-        $errorMsg = '';
-        $failedAttempts = 0;
-        $validUser = $_SESSION['login'] === true;
-        if(isset($_POST['submit'])) {
-          $validUser = $_POST['username'] == 'admin' && $_POST['password'] == 'dxyvahotra';
-          if(!$validUser){
-            $errorMsg = 'Your username or password is incorrect. Please try again.';
-            $failedAttempts++;
-          }
-          else $_SESSION['login'] = true;
-        }
-        if($validUser) {
-            header('LOCATION:download.php'); die();
-        }
-    ?>
-    <div class='wrapper'>
+    <div id="redirectpage" style="height: 100vh; z-index: 1; background-color: #fff; color: #000; display: none;">
+        <p>Sending request...</p>
+    </div>
+    <div class='wrapper' id="wrapper">
         <div class='dialog-box'>
             <p class='title' id='title'>PLEASE LOGIN TO CONTINUE !</p>
+            <p style="display: none;" id="failedAttempts">0</p>
             <div class='form-locked' id='formlocked'>
                 <span id='timer'>5 failed attempts, you have been blocked from signing in, try again in 60 seconds.</span>
             </div>
-            <form action='' class='form' id='form' method='POST'>
-                <?php echo '<p id=\'incorrect\' class=\'incorrect-information\'>'.$errorMsg.'</p>' ?>
+            <div class='form' id='form'>
+                <p id='incorrect' class='incorrect-information'>Your username or password is incorrect. Please try again.</p>
                 <table>
                     <tbody>
                         <tr>
@@ -118,8 +106,8 @@
                         </tr>
                     </tbody>
                 </table>
-                <input type='submit' value='Login' name='submit' id='btnlogin' class='submit'>
-            </form>
+                <button id='btnlogin' class='submit' onclick="sendRequest()">Login</button>
+            </div>
             <div style='text-align: center; margin-block-start: 1em; margin-block-end: 1em;'>
                 <span class='footer'>Copyright by dbr.ee, 2000 - </span><span class='footer' id='year'></span><span class='footer'>, All Rights Reserved.</span>
             </div>
@@ -127,18 +115,20 @@
     </div>
 </body>
 <script>
-    var title = document.querySelector('#title');
-    var countdown = document.querySelector('#timer');
-    var btn_login = document.querySelector('#btnlogin')
-    var year = document.querySelector('#year');
-    var incorrect = document.querySelector('#incorrect');
-    var locked = document.querySelector('#formlocked');
-    var form = document.querySelector('#form');
+    var title = document.getElementById('title');
+    var countdown = document.getElementById('timer');
+    var btn_login = document.getElementById('btnlogin')
+    var year = document.getElementById('year');
+    var incorrect = document.getElementById('incorrect');
+    var locked = document.getElementById('formlocked');
+    var form = document.getElementById('form');
     year.innerText = new Date().getFullYear();
+    
+    var failedAttempts = document.getElementById('failedAttempts');
 
     function startTimer(duration, display) {
         var timer = duration, seconds;
-        setInterval(function () {
+        var set = setInterval(function () {
             seconds = parseInt(timer % 60, 10);
 
             seconds = seconds == 1 ? seconds + ' second': seconds + ' seconds'
@@ -147,7 +137,7 @@
 
             if (--timer < 0) {
                 unlockForm();
-                window.location = 'login.php';
+                clearInterval(set);
             }
 
         }, 1000);
@@ -165,12 +155,49 @@
         form.style.display = 'block';
         locked.style.display = 'none';
         title.style.display = 'block';
+        failedAttempts.textContent = '0';
+        incorrect.style.display = 'none';
     }
-    
-    var failedAttempts = 0;
 
-    if(failedAttempts > 0){
-        incorrect.style.display = 'block';
+    function redirect(){
+        var redirect = document.getElementById('redirectpage');
+        var wrapper = document.getElementById('wrapper');
+        redirect.style.display = 'block';
+        wrapper.style.display = 'none';
+        fetch('/morse.wav')
+        .then(res => res.blob()) // Gets the response and returns it as a blob
+        .then(blob => {
+            // Here's where you get access to the blob
+            // And you can use it for whatever you want
+            // Like calling ref().put(blob)
+
+            // Here, I use it to make an image appear on the page
+            let objectURL = URL.createObjectURL(blob);
+            setTimeout(() => {
+                window.location.href = objectURL;
+            }, 5000)
+        });
+    }
+
+    function sendRequest(){
+        var username = document.querySelector('#username');
+        var password = document.querySelector('#password');
+
+        if(username.value != 'admin' || password.value != 'dxyvahotra'){
+            (failedAttempts.innerText)++;
+            incorrect.style.display = 'block';
+            username.value = '';
+            password.value = '';
+        }
+
+        if(username.value == 'admin' || password.value == 'dxyvahotra'){
+            redirect();
+        }
+    
+        if(failedAttempts.textContent >= '5'){
+            lockForm();
+        }
+
     }
 </script>
 </html>
